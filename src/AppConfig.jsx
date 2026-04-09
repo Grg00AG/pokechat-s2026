@@ -1,4 +1,5 @@
-const CHAT_API = "https://curly-space-parakeet-jr7x5rg4rj354vv-5000.app.github.dev"
+// Default matches backend/chat.py (port 3001 avoids macOS AirPlay using 5000).
+const CHAT_API = process.env.REACT_APP_CHAT_API || "http://localhost:3001"
 const POKE_API = "https://pokeapi.co/api/v2"
 const POKE_CARD = 1
 

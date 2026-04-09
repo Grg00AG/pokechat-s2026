@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from azure_endpoint import normalize_azure_openai_endpoint
 from flask import Flask, request, send_file, jsonify, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -11,7 +12,8 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 app = Flask(__name__)
 CORS(app)
 
-_azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+_raw_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+_azure_endpoint = normalize_azure_openai_endpoint(_raw_endpoint) if _raw_endpoint else None
 _azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
 _api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
 _deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "OurCS35")
@@ -67,15 +69,11 @@ def strongest():
     ]
 
     try:
+        # Some Azure models only allow default temperature (1) and reject extra sampling params.
         completion = client.chat.completions.create(
-        model=_deployment,
-        messages = message_text,
-        temperature=0.7,
-        max_tokens=800,
-        top_p=0.95,
-        frequency_penalty=0,
-        presence_penalty=0,
-        stop=None
+            model=_deployment,
+            messages=message_text,
+            max_completion_tokens=800,
         )
 
         return json.loads(completion.choices[0].message.content)
@@ -83,4 +81,5 @@ def strongest():
         return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("FLASK_PORT", "3001"))
+    app.run(host="0.0.0.0", port=port, debug=True)

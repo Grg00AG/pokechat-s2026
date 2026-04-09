@@ -2,12 +2,14 @@ import json
 import os
 from pathlib import Path
 
+from azure_endpoint import normalize_azure_openai_endpoint
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-_azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+_raw_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+_azure_endpoint = normalize_azure_openai_endpoint(_raw_endpoint) if _raw_endpoint else None
 _azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
 _api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
 _deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "OurCS35")
@@ -39,14 +41,9 @@ message_text = [
     {"role": "user", "content": "weakest pokemon; limit 1"}
 ]
 completion = client.chat.completions.create(
-model=_deployment,
-messages = message_text,
-temperature=0.7,
-max_tokens=800,
-top_p=0.95,
-frequency_penalty=0,
-presence_penalty=0,
-stop=None
+    model=_deployment,
+    messages=message_text,
+    max_completion_tokens=800,
 )
 
 print(json.loads(completion.choices[0].message.content))
